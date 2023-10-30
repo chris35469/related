@@ -12,14 +12,17 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
+let full_text = ""
+
 let readPage = (page) => {
     const lines = PDFExtract.utils.pageToLines(page, 2);
     const rows = PDFExtract.utils.extractTextRows(lines);
     let row = ""
     let text = rows.map((row) => row.join("")).join("\n");
-    console.log("_____________________________________________________")
-    console.log(text)
-    console.log("_____________________________________________________")
+    //console.log("_____________________________________________________")
+    //console.log(text)
+    //console.log("_____________________________________________________")
+    full_text = `${full_text} ${text}`
     run(text)
     //srows.map(processRow);
 }
@@ -37,6 +40,9 @@ async function processFiles() {
             data.pages.forEach(page => readPage(page))
             //console.log(data);
         }
+
+        //console.log(full_text)
+        //run(full_text)
     } catch(err) {        
         console.log(err)
     }
@@ -44,15 +50,24 @@ async function processFiles() {
 
 let run = async (text) => {
     let prompt = `Summarize the text in triple quotes named 'Review Text': \
-      
-    Review text: '''${text}'''`
+    
+    Review text: '''${text}''' \
+    
+    Seperate your response in the following sections: \
+
+    1. Summary \
+    2. Positives \ 
+    3. Negatives \
+
+    The positive section should discuss positives aspects of the text \
+    The negatives section should critique the writing, clarity, study design, and evaluation of the research project`
 
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: [{role: "user", content: prompt}],
       });
       //console.log*"RUN ASYNC___"
-      console.log(completion.data.choices[0].message);
+      console.log(completion.data.choices[0].message.content);
 }
 
 processFiles()
